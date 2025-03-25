@@ -20,10 +20,8 @@ def main():
             keyword = input("Введите поисковый запрос: ")
             vacancies_data = api.get_vacancies(keyword)
             for v in vacancies_data:
-                # Проверяем наличие ключа 'salary' и его значение
-                salary_from = v.get('salary', {}).get('from')  # Используем get для безопасного доступа
-                if salary_from is None:
-                    salary_from = 0  # Или любое другое значение по умолчанию
+                salary_info = v.get('salary')
+                salary_from = salary_info.get('from') if salary_info else 0
 
                 vacancy = Vacancy(v['name'], v['alternate_url'], salary_from, v['snippet']['requirement'])
                 file_handler.add_vacancy(vacancy)
@@ -33,11 +31,14 @@ def main():
             vacancy_quantity = int(input("Введите количество вакансий для отображения: "))
             with open('vacancies.json', 'r') as file:
                 vacancies = [json.loads(line) for line in file]
-                sorted_vacancies = sorted(vacancies, key=lambda x: x.get('salary', {}).get('from', 0), reverse=True)[
+                sorted_vacancies = sorted(vacancies, key=lambda x: x.get('salary_from', 0), reverse=True)[
                                    :vacancy_quantity]
+
                 for v in sorted_vacancies:
-                    print(
-                        f"Title: {v['title']}, Salary: {v.get('salary', {}).get('from', 'Не указана')}, URL: {v['url']}")
+                    salary_from = v.get('salary_from', None)
+                    salary_to = v.get('salary_to', None)
+
+                    print(f"Зарплата от: {salary_from}, до: {salary_to}")
 
         elif choice == '3':
             keyword = input("Введите ключевое слово для поиска в описании: ")

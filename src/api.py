@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import requests
-
 from config import JSON_PATH
+from src import vacancies
 
 
 class AbstractAPI(ABC):
@@ -35,14 +35,20 @@ class HeadHunterAPI(AbstractAPI):
 
     def get_vacancies(self, keyword):
         self.params['text'] = keyword
-        while self.params.get('page') != 20:
+        while True:
             response = requests.get(self.base_url, headers=self.headers, params=self.params)
-            vacancies = response.json()['items']
-            self.get_vacancies(keyword).extend(vacancies)
-            self.params['page'] += 1
+            data = response.json()
+
+            # Проверяем наличие ключа 'items' в ответе
+            if 'items' not in data:
+                print("Ключ 'items' отсутствует в ответе API.")
+                break
+
+            vacancies = data['items']
+            if not vacancies:  # Если вакансий больше нет, выходим из цикла
+                break
+
+            self.vacancies.extend(vacancies)
+            self.params['page'] += 1  # Переходим к следующей странице
 
         return self.vacancies
-
-if __name__ == "__main__":
-    hh = HeadHunterAPI(file_worker=JSON_PATH)
-    hh.get_vacancies("Разработчик")

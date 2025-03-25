@@ -24,61 +24,51 @@ class JSONFileHandler(VacancyHandler):
 
     def add_vacancy(self, vacancy):
         """Добавить вакансию в JSON-файл."""
-        with open(self.filename, 'a', encoding='utf-8') as file:
-            json.dump(vacancy, file)
-            file.write('\n')  # Записываем каждую вакансию на новой строке
+        with open(self.filename, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(vacancy.to_dict(), ensure_ascii=False) + '\n')
 
     def get_vacancies(self, criteria):
         """Получить вакансии из файла по указанным критериям."""
-        vacancies = []
+        filtered_vacancies = []
         try:
             with open(self.filename, 'r', encoding='utf-8') as file:
                 for line in file:
                     if line.strip():  # Проверяем, что строка не пустая
                         data = json.loads(line)
                         if criteria.lower() in data.get('name', '').lower():
-                            vacancies.append(data)
+                            filtered_vacancies.append(data)
         except FileNotFoundError:
             print(f"Файл {self.filename} не найден.")
         except json.JSONDecodeError as e:
             print(f"Ошибка декодирования JSON: {e}")
 
-        return []
+        return filtered_vacancies  # Возвращаем отфильтрованные вакансии
 
-    def delete_vacancy(self, title):
-        """Удалить вакансию по названию."""
-        vacancies = []
+    def delete_vacancy(self, vacancy_name):
+        """Удалить вакансию по имени."""
+        vacancies_found = False
+        vacancies_to_keep = []
+
         try:
             with open(self.filename, 'r', encoding='utf-8') as file:
-                vacancies = [json.loads(line) for line in file if line.strip()]
-
-            # Фильтруем вакансии, исключая ту, которую нужно удалить
-            vacancies = [v for v in vacancies if v.get('title') != title]
-
-            # Записываем оставшиеся вакансии обратно в файл
-            with open(self.filename, 'w', encoding='utf-8') as file:
-                for vacancy in vacancies:
-                    json.dump(vacancy, file)
-                    file.write('\n')
+                for line in file:
+                    if line.strip():  # Проверяем, что строка не пустая
+                        data = json.loads(line)
+                        if data.get('name') == vacancy_name:
+                            vacancies_found = True  # Вакансия найдена, не добавляем её в новый список
+                        else:
+                            vacancies_to_keep.append(data)  # Сохраняем вакансию, если она не совпадает
 
         except FileNotFoundError:
             print(f"Файл {self.filename} не найден.")
         except json.JSONDecodeError as e:
             print(f"Ошибка декодирования JSON: {e}")
 
-# Пример использования
-if __name__ == "__main__":
-    handler = JSONFileHandler()
+        # Если вакансия не найдена, ничего не делаем
+        if not vacancies_found:
+            return
 
-    # Добавление вакансий
-    handler.add_vacancy({'name': 'Python Developer', 'salary': 100000, 'url':"https://api.hh.ru/vacancies"})
-    handler.add_vacancy({'name': 'Data Scientist', 'salary': 120000, 'url':"https://api.hh.ru/vacancies"})
-
-    # Получение вакансий
-    vacancies = handler.get_vacancies('Python')
-    print("Найденные вакансии:", vacancies)
-
-    # Удаление вакансии
-    handler.delete_vacancy('Python Developer')
-    vacancies_after_deletion = handler.get_vacancies('Python')
-    print("Вакансии после удаления:", vacancies_after_deletion)
+        # Если вакансия была найдена, перезаписываем файл
+        with open(self.filename, 'w', encoding='utf-8') as file:
+            for vacancy in vacancies_to_keep:
+                file.write(json.dumps(vacancy) + '\n')
