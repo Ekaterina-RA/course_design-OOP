@@ -1,11 +1,21 @@
 class Vacancy:
-    __slots__ = ('_title', '_salary', '_url', '_description')
+    __slots__ = ("_id", "_title", "_url", "_salary")
 
-    def __init__(self, title: str, salary: float, url: str, description: str):
+    def __init__(self, id: str, title: str, salary: float, url: str):
+        self._id = id
         self._title = title
-        self._salary = salary  # Вызовет валидацию
+        self._salary = salary
         self._url = url
-        self._description = description
+
+    def __lt__(self, other):
+        return self.salary < other.salary
+
+    def __repr__(self):
+        return f"Vacancy(id={self._id},title={self._title},salary={self._salary},url={self._url})"
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def title(self):
@@ -27,25 +37,3 @@ class Vacancy:
     @property
     def url(self):
         return self._url
-
-    @property
-    def description(self):
-        return self._description
-
-    def to_dict(self):
-        return {
-            'title': self.title,
-            'url': self.url,
-            'salary': self.salary,
-            'description': self.description
-        }
-
-    def __lt__(self, other):
-        return self.salary < other.salary
-
-    def __gt__(self, other):
-        return self.salary > other.salary
-
-
-
-
